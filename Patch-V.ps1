@@ -10,15 +10,27 @@ function Get-HvDirs($Dir)
     return (Get-ChildItem -Path $Dir -Filter "amd64*hyper*") #amd64_hyperv or amd64_microsoft....hyper-v
 }
 
+function Get-HvBinsList()
+{
+    return Get-Content (Join-Path $PSScriptRoot "components.txt")
+}
+
 function Get-LocalHvBins($Dir)
 {
     $result = @{}
+    $comps = Get-HvBinsList
     foreach($d in $Dir)
     {
         $bin = Get-ChildItem -Path $d.FullName -Attributes Archive
         foreach($b in $bin)
         {
+            <#
             if($b.Extension -ne ".exe" -and $b.Extension -ne ".dll" -and $b.Extension -ne ".sys")
+            {
+                continue
+            }
+            #>
+            if(!($b.Name -in $comps))
             {
                 continue
             }
@@ -63,13 +75,14 @@ function Get-BaseFile()
     $Src = "C:\Windows\WinSxS"
 
     Write-Host ("Find all hyper-v directory from {0}" -f $Src)
-    $local = Get-HvDirs -Dir $Src
-
-    Write-Host ("Hyper-V directory found from local:{0}" -f $local.length)
+    #$local = Get-HvDirs -Dir $Src
+    $local = Get-ChildItem -Path $Src
 
     $bin = Get-LocalHvBins -Dir $local
 
-    foreach($b in $bin.GetEnumerator())
+    $bin_enum = $bin.GetEnumerator()
+
+    foreach($b in $bin_enum)
     {
         $bin_name = $b.name
         $patch_info = $bin[$b.Name]
@@ -113,7 +126,7 @@ function Start-ForwardPatch($Patch)
 Push-Location
 Set-location -Path $PSScriptRoot
 
-if((Test-Path ".\base") -and (Get-ChildItem -Path ".\base").length -ne 0)
+if($SkipRev -ne $false -and (Test-Path ".\base") -and (Get-ChildItem -Path ".\base").length -ne 0)
 {
     $SkipRev = (Read-Host -Prompt "base dir is not empty, skip reverse patching?[y/n]") -like "y*"
 }
@@ -121,6 +134,8 @@ if((Test-Path ".\base") -and (Get-ChildItem -Path ".\base").length -ne 0)
 if(!$SkipRev)
 {
     Get-BaseFile
+    #test
+    Exit
 }
 
 $forwards = Get-Patch -Dir (Get-HvDirs -Dir $Path)
