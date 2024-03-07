@@ -32,7 +32,6 @@ function New-IDB($Bin)
 			Write-Host ("primary {0} vs secondary {1}" -f $b['primary'].Name, $b['secondary'].Name)
 			$path = $b['primary'].FullName
 			$idb = $b['primary'].Name + $db_format
-			$arg = "-A $path"
 
 			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $PrimaryOut $idb), $path
 
@@ -42,7 +41,6 @@ function New-IDB($Bin)
 
 			$path = $b['secondary'].FullName
 			$idb = $b['secondary'].Name + $db_format
-			$arg = "-B $path"
 
 			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $SecondaryOut $idb), $path
 			Write-Verbose $arg
