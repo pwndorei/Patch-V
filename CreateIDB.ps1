@@ -38,7 +38,7 @@ function New-IDB($Bin)
 
 			Write-Verbose $arg
 
-			#$p = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
+			$p = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
 
 			$path = $b['secondary'].FullName
 			$idb = $b['secondary'].Name + $db_format
@@ -47,9 +47,9 @@ function New-IDB($Bin)
 			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $SecondaryOut $idb), $path
 			Write-Verbose $arg
 
-			#$s = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
+			$s = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
 
-			#Wait-Process -Id $p, $s
+			Wait-Process -Id $p, $s
 		}
 	}
 
