@@ -5,19 +5,25 @@ Param(
     [String] $Secondary, #binary files(secondary) location
     [Parameter(Mandatory=$true)]
     [String] $IDA,
-    $Arch="amd64"
+    $Arch="amd64",
+	$PrimaryOut=$Primary,
+	$SecondaryOut=$Secondary
 )
 
 
 function New-IDB($Bin)
 {
+	$cmd = "-A -S{0} -o{1} {2}"
+	$db_format = ".i64"
 	if($Arch -eq "amd64")
 	{
 		$IDA = Join-Path $IDA "idat64.exe"
+		$db_format = ".i64"
 	}
 	else
 	{
 		$IDA = Join-Path $IDA "idat.exe"
+		$db_format = ".idb"
 	}
 	foreach($b in $Bin)
 	{
@@ -25,12 +31,20 @@ function New-IDB($Bin)
 		{
 			Write-Host ("primary {0} vs secondary {1}" -f $b['primary'].Name, $b['secondary'].Name)
 			$path = $b['primary'].FullName
-			$arg = "-B $path"
+			$idb = $b['primary'].Name + $db_format
+
+			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $PrimaryOut $idb), $path
+
+			Write-Verbose $arg
 
 			$p = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
 
 			$path = $b['secondary'].FullName
-			$arg = "-B $path"
+			$idb = $b['secondary'].Name + $db_format
+
+			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $SecondaryOut $idb), $path
+			Write-Verbose $arg
+
 			$s = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
 
 			Wait-Process -Id $p, $s
@@ -64,6 +78,12 @@ function Get-DiffBins($primary, $secondary)
 }
 
 
+Push-Location
+
+Set-Location -Path $PSScriptRoot
+
 $diffs = Get-DiffBins -primary (Get-ChildItem -Path $Primary) -secondary (Get-ChildItem -Path $Secondary)
 
 New-IDB -Bin $diffs
+
+Pop-Location
