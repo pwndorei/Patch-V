@@ -166,7 +166,6 @@ vmcompute.exe
 VmComputeAgent.exe
 CmService.dll
 rdsxvmaudio.dll
-
 hnswfpdriver.sys
 fse.sys
 lxss.sys
@@ -198,7 +197,6 @@ Microsoft.Virtualization.Client.Wizards.dll
 Newtonsoft.Json.dll
 SnapInAbout.dll
 VMCreate.exe
-
 Microsoft.Virtualization.Client.dll
 Microsoft.Virtualization.Client.6.2.dll
 Microsoft.Virtualization.Client.6.2.Management.dll
@@ -250,7 +248,6 @@ Microsoft.Virtualization.Client.VMBrowser.resources.dll
 Microsoft.Virtualization.Client.Wizards.dll
 Microsoft.Virtualization.Client.Wizards.resources.dll
 Microsoft.Virtualization.Client.Wizards.resources.dll
-
 Microsoft.HyperV.PowerShell.dll
 Microsoft.HyperV.PowerShell.Cmdlets.dll
 Microsoft.HyperV.PowerShell.Cmdlets.resources.dll
