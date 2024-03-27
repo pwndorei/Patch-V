@@ -134,8 +134,6 @@ if($SkipRev -ne $false -and (Test-Path ".\base") -and (Get-ChildItem -Path ".\ba
 if(!$SkipRev)
 {
     Get-BaseFile
-    #test
-    Exit
 }
 
 $forwards = Get-Patch -Dir (Get-HvDirs -Dir $Path)
