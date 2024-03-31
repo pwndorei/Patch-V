@@ -64,7 +64,7 @@ function Get-DiffBins($primary, $secondary)
 		{
 			continue
 		}
-		if((Get-FileHash -Path $p.FullName) -eq (Get-FileHash -Path $s.FullName))
+		if((Get-FileHash -Path $p.FullName).Hash -eq (Get-FileHash -Path $s.FullName).Hash)
 		{
 			continue
 		}
