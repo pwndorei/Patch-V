@@ -5,17 +5,12 @@ Param
     $Out=".\patched",
     $SkipRev=$false
 )
-function Get-HvDirs($Dir)
-{
-    return (Get-ChildItem -Path $Dir -Filter "amd64*hyper*") #amd64_hyperv or amd64_microsoft....hyper-v
-}
-
 function Get-HvBinsList()
 {
     return Get-Content (Join-Path $PSScriptRoot "components.txt")
 }
 
-function Get-LocalHvBins($Dir)
+function Get-HvBins($Dir)
 {
     $result = @{}
     $comps = Get-HvBinsList
@@ -46,18 +41,25 @@ function Get-LocalHvBins($Dir)
 }
 
 
-function Get-Patch($Dir)
+function Get-Patch($Dir, $Type)
 {
     $patch_info = @{}
+
+    if($Type -ne "f" -and $Type -ne "r")
+    {
+        Write-Host "Invalid Patch $Type"
+        return $patch_info
+    }
+
     foreach($d in $Dir)
     {
-        if(!(Test-Path (Join-Path $d.FullName "f")))
+        if(!(Test-Path (Join-Path $d.FullName $Type)))
         {
             continue
         }
-        foreach($forward in Get-ChildItem -Path (Join-Path $d.FullName "f"))
+        foreach($patch in Get-ChildItem -Path (Join-Path $d.FullName $Type))
         {
-            $patch_info[$forward.Name] = $forward.FullName
+            $patch_info[$patch.Name] = $patch.FullName
         }
     }
     return $patch_info
@@ -76,9 +78,9 @@ function Get-BaseFile()
 
     Write-Host ("Find all hyper-v directory from {0}" -f $Src)
     #$local = Get-HvDirs -Dir $Src
-    $local = Get-ChildItem -Path $Src
+    $local = Get-ChildItem -Path $Src -Attributes Directory
 
-    $bin = Get-LocalHvBins -Dir $local
+    $bin = Get-HvBins -Dir $local
 
     $bin_enum = $bin.GetEnumerator()
 
@@ -136,7 +138,7 @@ if(!$SkipRev)
     Get-BaseFile
 }
 
-$forwards = Get-Patch -Dir (Get-HvDirs -Dir $Path)
+$forwards = Get-Patch -Dir (Get-ChildItem -Path $Path -Attributes Directory) -Type "f"
 
 Start-ForwardPatch -Patch $forwards
 
