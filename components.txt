@@ -107,6 +107,7 @@ passthruparser.sys
 vhdparser.sys
 pvhdparser.sys
 vpcivsp.sys
+vpci.sys
 storvsc.sys
 vmbkmclr.sys
 vmbkmcl.sys
