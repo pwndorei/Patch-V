@@ -3,7 +3,8 @@ Param
     [Parameter(Mandatory=$true)]
     $Path,
     $Out=".\patched",
-    $SkipRev=$false
+    $limit=4,
+    [System.Boolean]$DryRun=$false
 )
 function Get-HvBinsList()
 {
@@ -14,6 +15,7 @@ function Get-HvBins($Dir)
 {
     $result = @{}
     $comps = Get-HvBinsList
+
     foreach($d in $Dir)
     {
         $bin = Get-ChildItem -Path $d.FullName -Attributes Archive
@@ -84,6 +86,8 @@ function Get-BaseFile()
 
     $bin_enum = $bin.GetEnumerator()
 
+    $arg = @()
+
     foreach($b in $bin_enum)
     {
         $bin_name = $b.name
@@ -96,10 +100,19 @@ function Get-BaseFile()
         }
         else
         {
-            $arg = "delta_patch.py -i {0} -o {1} {2}" -f $patch_info['bin'], (Join-Path ".\base" $bin_name), $patch_info['r']
-            Wait-Process -Id (Start-Process "python" -PassThru -ArgumentList $arg -NoNewWindow).Id
+            $arg += "delta_patch.py -i {0} -o {1} {2}" -f $patch_info['bin'], (Join-Path ".\base" $bin_name), $patch_info['r']
+            #Wait-Process -Id (Start-Process "python" -PassThru -ArgumentList $arg -NoNewWindow).Id
         }
+    }
 
+    $arg | ForEach-Object -ThrottleLimit $limit -Parallel {
+        if($Using:DryRun -eq $true)
+        {
+            Write-Host ("DryRun: python {0}" -f $_)
+        }
+        else {
+            Wait-Process -Id (Start-Process "python" -PassThru -ArgumentList $_ -NoNewWindow -RedirectStandardOutput ".\NUL").Id
+        }
     }
 }
 
@@ -112,6 +125,8 @@ function Start-ForwardPatch($Patch)
         New-Item -Path $Out -ItemType Directory
     }
 
+    $arg = @()
+
     foreach($b in $Base)
     {
         if($null -eq $Patch[$b.Name])
@@ -120,15 +135,26 @@ function Start-ForwardPatch($Patch)
             continue
         }
 
-        $arg = "delta_patch.py -i {0} -o {1} {2}" -f $b.FullName, (Join-Path $Out $b.Name), $Patch[$b.Name]
-        Wait-Process -Id (Start-Process "python" -PassThru -ArgumentList $arg -NoNewWindow).Id
+        $arg += "delta_patch.py -i {0} -o {1} {2}" -f $b.FullName, (Join-Path $Out $b.Name), $Patch[$b.Name]
     }
+    $arg | ForEach-Object -ThrottleLimit $limit -Parallel {
+        if($Using:DryRun -eq $true)
+        {
+            Write-Host ("DryRun: python {0}" -f $_)
+        }
+        else
+        {
+            Wait-Process -Id (Start-Process "python" -PassThru -ArgumentList $_ -NoNewWindow -RedirectStandardOutput ".\NUL").Id
+        }
+    }
+
+
 }
 
 Push-Location
 Set-location -Path $PSScriptRoot
 
-if($SkipRev -ne $false -and (Test-Path ".\base") -and (Get-ChildItem -Path ".\base").length -ne 0)
+if((Get-ChildItem -Path ".\base").length -ne 0)
 {
     $SkipRev = (Read-Host -Prompt "base dir is not empty, skip reverse patching?[y/n]") -like "y*"
 }
