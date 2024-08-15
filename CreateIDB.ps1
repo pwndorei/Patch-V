@@ -7,7 +7,10 @@ Param(
     [String] $IDA,
     $Arch="amd64",
 	$PrimaryOut=$Primary,
-	$SecondaryOut=$Secondary
+	$SecondaryOut=$Secondary,
+	[bool] $DryRun=$false,
+	$Limit=2,
+	[String[]] $Extension=$(".exe", ".dll", ".sys")
 )
 
 
@@ -25,9 +28,13 @@ function New-IDB($Bin)
 		$IDA = Join-Path $IDA "idat.exe"
 		$db_format = ".idb"
 	}
+
+	$cmdline = @()
+
 	foreach($b in $Bin)
 	{
-		if($b['primary'].Extension -eq ".exe" -or $b['primary'].Extension -eq ".dll" -or $b['primary'].Extension -eq ".sys")
+		if($b['primary'].Extension -in $Extension)
+		#if($b['primary'].Extension -eq ".exe" -or $b['primary'].Extension -eq ".dll" -or $b['primary'].Extension -eq ".sys")
 		{
 			Write-Host ("primary {0} vs secondary {1}" -f $b['primary'].Name, $b['secondary'].Name)
 			$path = $b['primary'].FullName
@@ -37,7 +44,9 @@ function New-IDB($Bin)
 
 			Write-Verbose $arg
 
-			$p = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
+			$cmdline += $arg
+
+			#$p = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
 
 			$path = $b['secondary'].FullName
 			$idb = $b['secondary'].Name + $db_format
@@ -45,9 +54,20 @@ function New-IDB($Bin)
 			$arg = $cmd -f (Join-Path $PSScriptRoot "analysis.idc"), (Join-Path $SecondaryOut $idb), $path
 			Write-Verbose $arg
 
-			$s = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
+			$cmdline += $arg
 
-			Wait-Process -Id $p, $s
+			#$s = (Start-Process $IDA -ArgumentList $arg -PassThru -WindowStyle Hidden).Id
+
+			#Wait-Process -Id $p, $s
+		}
+	}
+
+	$cmdline | ForEach-Object -ThrottleLimit $Limit -Parallel {
+		if($Using:DryRun -eq $true) {
+			Write-Host ("Dryrun {0} {1}" -f $Using:IDA, $_)
+		}
+		else {
+			Wait-Process -Id (Start-Process -FilePath $Using:IDA -ArgumentList $_ -PassThru -NoNewWindow -RedirectStandardOutput ".\NUL").Id
 		}
 	}
 
