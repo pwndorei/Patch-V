@@ -46,6 +46,7 @@ function Get-HvBins($Dir)
 function Get-Patch($Dir, $Type)
 {
     $patch_info = @{}
+    $comp = Get-HvBinsList
 
     if($Type -ne "f" -and $Type -ne "r")
     {
@@ -53,7 +54,15 @@ function Get-Patch($Dir, $Type)
         return $patch_info
     }
 
-    foreach($d in $Dir)
+    $patches = Get-ChildItem -Recurse -Path $Dir -Attributes Archive | Where-Object -Property Name -in $comp | Where-Object -Property PSParentPath -like "*\f"
+
+    foreach($p in $patches)
+    {
+        $patch_info[$p.Name] = $p.FullName
+    }
+
+    <#
+    foreach($d in (Get-ChildItem -Path $Dir -Filter $type -Recurse -Attributes Directory))
     {
         if(!(Test-Path (Join-Path $d.FullName $Type)))
         {
@@ -64,6 +73,8 @@ function Get-Patch($Dir, $Type)
             $patch_info[$patch.Name] = $patch.FullName
         }
     }
+    #>
+
     return $patch_info
 }
 
@@ -164,7 +175,7 @@ if(!$SkipRev)
     Get-BaseFile
 }
 
-$forwards = Get-Patch -Dir (Get-ChildItem -Path $Path -Attributes Directory) -Type "f"
+$forwards = Get-Patch -Dir $Path -Type "f"
 
 Start-ForwardPatch -Patch $forwards
 
